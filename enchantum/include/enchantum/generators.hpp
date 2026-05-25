@@ -92,15 +92,15 @@ namespace details {
       return Size - it.index;
     }
 
-    [[nodiscard]] constexpr bool operator==(const sized_iterator that) const noexcept { return that.index == index; };
+    [[nodiscard]] constexpr bool operator==(const sized_iterator that) const noexcept { return that.index == index; }
     [[nodiscard]] constexpr bool operator==(senitiel) const noexcept { return Size == index; }
 
 #ifdef __cpp_impl_three_way_comparison
-    [[nodiscard]] constexpr auto operator<=>(const sized_iterator that) const noexcept { return index <=> that.index; };
+    [[nodiscard]] constexpr auto operator<=>(const sized_iterator that) const noexcept { return index <=> that.index; }
     [[nodiscard]] constexpr auto operator<=>(senitiel) const noexcept { return index <=> Size; }
 #else
 
-    [[nodiscard]] constexpr bool operator!=(const sized_iterator that) const noexcept { return that.index != index; };
+    [[nodiscard]] constexpr bool operator!=(const sized_iterator that) const noexcept { return that.index != index; }
     [[nodiscard]] constexpr bool operator!=(senitiel) const noexcept { return Size != index; }
 
     [[nodiscard]] friend constexpr bool operator==(senitiel, const sized_iterator it) noexcept
