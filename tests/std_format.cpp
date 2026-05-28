@@ -10,8 +10,8 @@ TEMPLATE_LIST_TEST_CASE("std::format", "[stringify][std_format]", AllEnumsTestTy
    
   for (const auto& [value, string] : enchantum::entries<TestType>)
     CHECK(std::format("{}", value) == string);
-  using T = std::underlying_type_t<TestType>;
-  if constexpr (!enchantum::is_bitflag<TestType> && !std::is_same_v<bool, std::underlying_type_t<TestType>>)
+  using T = typename std::underlying_type<TestType>::type;
+  if constexpr (!enchantum::is_bitflag<TestType> && !std::is_same<bool, typename std::underlying_type<TestType>::type>::value)
     if constexpr (123 <= T(enchantum::max<TestType>) && !enchantum::contains<TestType>(123))
       CHECK("123" == std::format("{}", TestType(123)));
 }

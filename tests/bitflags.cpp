@@ -220,7 +220,7 @@ TEMPLATE_LIST_TEST_CASE("bitflags", "[bitflags]", AllFlagsTestTypes)
 {
   constexpr auto  count  = enchantum::count<TestType>;
   constexpr auto& values = enchantum::values<TestType>;
-  using T                = std::underlying_type_t<TestType>;
+  using T                = typename std::underlying_type<TestType>::type;
   std::vector<TestType> combinations;
   combinations.reserve(1u << count);
   constexpr auto total = std::uint64_t{1} << (count - enchantum::has_zero_flag<TestType>);
@@ -259,7 +259,7 @@ TEMPLATE_LIST_TEST_CASE("bitflags", "[bitflags]", AllFlagsTestTypes)
     }
   }
 
-  SECTION("contains_bitflag<E>(std::underlying_type_t<E>(enum))")
+  SECTION("contains_bitflag<E>(typename std::underlying_type<E>::type(enum))")
   {
     for (const auto comb : combinations) {
       CHECK(enchantum::contains_bitflag<TestType>(static_cast<T>(comb)));
@@ -285,7 +285,7 @@ TEMPLATE_LIST_TEST_CASE("bitflags", "[bitflags]", AllFlagsTestTypes)
 
 TEMPLATE_LIST_TEST_CASE("contains_bitflag returns false for invalid combinations", "[bitflags]", AllFlagsTestTypes)
 {
-  using Underlying = std::underlying_type_t<TestType>;
+  using Underlying = typename std::underlying_type<TestType>::type;
   std::vector<TestType> invalid_combinations;
 
   for (std::size_t bit = 0; bit < sizeof(Underlying) * CHAR_BIT; ++bit) {

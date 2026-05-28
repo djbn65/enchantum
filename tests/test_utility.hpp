@@ -561,15 +561,15 @@ using AllEnumsTestTypes = concat<
 
 
 template<typename E>
-struct Catch::StringMaker<E,std::enable_if_t<std::is_enum_v<E>>> {
+struct Catch::StringMaker<E, typename std::enable_if<std::is_enum<E>::value>::type> {
   static std::string convert(E e)
   {
-    return '"' + std::to_string(static_cast<std::underlying_type_t<E>>(e)) + '"';
+    return '"' + std::to_string(static_cast<typename std::underlying_type<E>::type>(e)) + '"';
     //if constexpr (enchantum::BitFlagEnum<E>)
     //  return "\"" + enchantum::to_string_bitflag(e) + "\" (" +
-    //    std::to_string(static_cast<std::underlying_type_t<E>>(e)) + ")";
+    //    std::to_string(static_cast<typename std::underlying_type<E>::type>(e)) + ")";
     //else
     //  return "\"" + std::string(enchantum::to_string(e)) + "\" (" +
-    //    std::to_string(static_cast<std::underlying_type_t<E>>(e)) + ")";
+    //    std::to_string(static_cast<typename std::underlying_type<E>::type>(e)) + ")";
   }
 };

@@ -76,7 +76,7 @@ The Enum concept is used to identify types that are valid C++ enums. Any type th
 
 ```cpp
 template<typename T>
-concept Enum = std::is_enum_v<T>;
+concept Enum = std::is_enum<T>::value;
 ```
 
 > Example usage:
@@ -95,7 +95,7 @@ The SignedEnum concept restricts types to enums whose underlying type is a signe
 #include <enchantum/common.hpp>
 
 template<typename T>
-concept SignedEnum = Enum<T> && std::signed_integral<std::underlying_type_t<T>>;
+concept SignedEnum = Enum<T> && std::signed_integral<typename std::underlying_type<T>::type>;
 ```
 
 > Example usage:
@@ -135,10 +135,10 @@ There exists a C++17 trait for backward compatability.
 
 ```cpp
 template<typename T>
-inline constexpr bool is_scoped_enum = !std::is_convertible_v<T,std::underlying_type_t<T>>;
+inline constexpr bool is_scoped_enum = !std::is_convertible<T,typename std::underlying_type<T>::type>::value;
 
 template<typename T>
-concept ScopedEnum = Enum<T> && (!std::is_convertible_v<T, std::underlying_type_t<T>>);
+concept ScopedEnum = Enum<T> && (!std::is_convertible<T, typename std::underlying_type<T>::type>::value);
 ```
 
 > Example usage:
@@ -158,7 +158,7 @@ There exists a C++17 trait for backward compatability.
 
 ```cpp
 template<typename T>
-inline constexpr bool is_unscoped_enum = std::is_enum_v<T> && !is_scoped_enum<T>;
+inline constexpr bool is_unscoped_enum = std::is_enum<T>::value && !is_scoped_enum<T>;
 
 template<typename T>
 concept UnscopedEnum = Enum<T> && !ScopedEnum<T>;
@@ -266,7 +266,7 @@ static_assert(enchantum::ContiguousEnum<Status>);
 // defined in header `common.hpp`
 
 template<typename E, typename Underlying>
-concept EnumOfUnderlying = Enum<E> && std::same_as<std::underlying_type_t<E>, Underlying>;
+concept EnumOfUnderlying = Enum<E> && std::same_as<typename std::underlying_type<E>::type, Underlying>;
 ```
 
 constrains an enum to a specific underlying type.
@@ -504,7 +504,7 @@ namespace details
 {
   template<Enum E>
   struct CAST_FUNCTOR {
-  constexpr std::optional<E> operator()(std::underlying_type_t<E> value) noexcept;
+  constexpr std::optional<E> operator()(typename std::underlying_type<E>::type value) noexcept;
 
   constexpr std::optional<E> operator()(std::string_view name) noexcept;
 
@@ -945,7 +945,7 @@ template<Enum E>
 constexpr bool contains(E value) noexcept;
 
 template<Enum E>
-constexpr bool contains(std::underlying_type_t<E> value) noexcept;
+constexpr bool contains(typename std::underlying_type<E>::type value) noexcept;
 
 template<Enum E>
 constexpr bool contains(std::string_view name) noexcept;
@@ -988,7 +988,7 @@ template<BitFlagEnum E>
 constexpr bool contains_bitflag(E value) noexcept;
 
 template<BitFlagEnum E>
-constexpr bool contains_bitflag(std::underlying_type_t<E> value) noexcept;
+constexpr bool contains_bitflag(typename std::underlying_type<E>::type value) noexcept;
 
 template<BitFlagEnum E>
 constexpr bool contains_bitflag(std::string_view name,char sep = '|') noexcept;
@@ -1427,9 +1427,9 @@ constexpr void for_each(Function function) /*noexcept when possible*/;
 enum class Numbers {
   _0,_1,_2,_3,_4,_5
 }
-std::underlying_type_t<Numbers> sum{};
+typename std::underlying_type<Numbers>::type sum{};
 enchantum::for_each<Color>([&sum](auto constant) {
-  constexpr std::underlying_type_t<Numbers> v = enchantum::to_underlying(constant.value); // constant is `std::integral_constant`
+  constexpr typename std::underlying_type<Numbers>::type v = enchantum::to_underlying(constant.value); // constant is `std::integral_constant`
   sum += v;
 });
 ```
@@ -1440,7 +1440,7 @@ Same as [std::to_underlying](https://en.cppreference.com/w/cpp/utility/to_underl
 
 ```cpp
 template <Enum E>
-constexpr std::underlying_type_t<E> to_underlying(E e) noexcept;
+constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept;
 ```
 
 Defined in header `entries.hpp` which is included everywhere.
@@ -1451,7 +1451,7 @@ Defined in header `entries.hpp` which is included everywhere.
 // defined in header `array.hpp`
 template<typename E, typename V, typename Container = std::array<V, count<E>>>
 class array : public Container {
-  static_assert(std::is_enum_v<E>);
+  static_assert(std::is_enum<E>::value);
 public:
   using container_type = Container;
   using index_type     = E;
@@ -1492,7 +1492,7 @@ std::cout << values.at(Color::Blue) << '\n';  // Outputs: 42
 // defined in header `bitset.hpp`
 template<typename E, typename Container = std::bitset<count<E>>>
 class bitset : public Container {
-  static_assert(std::is_enum_v<E>);
+  static_assert(std::is_enum<E>::value);
 public:
 
   using container_type = Container;
@@ -1551,17 +1551,17 @@ Overloads the bitwise operators for a given enum. `~`,`&`,`|`,`^`,`&=`,`|=`,`^=`
 #define ENCHANTUM_DEFINE_BITWISE_FOR(Enum)                                                \
   constexpr Enum operator&(Enum a, Enum b) noexcept                                       \
   {                                                                                       \
-    using T = std::underlying_type_t<Enum>;                                               \
+    using T = typename std::underlying_type<Enum>::type;                                               \
     return static_cast<Enum>(static_cast<T>(a) & static_cast<T>(b));                      \
   }                                                                                       \
   constexpr Enum operator|(Enum a, Enum b) noexcept                                       \
   {                                                                                       \
-    using T = std::underlying_type_t<Enum>;                                               \
+    using T = typename std::underlying_type<Enum>::type;                                               \
     return static_cast<Enum>(static_cast<T>(a) | static_cast<T>(b));                      \
   }                                                                                       \
   constexpr Enum operator^(Enum a, Enum b) noexcept                                       \
   {                                                                                       \
-    using T = std::underlying_type_t<Enum>;                                               \
+    using T = typename std::underlying_type<Enum>::type;                                               \
     return static_cast<Enum>(static_cast<T>(a) ^ static_cast<T>(b));                      \
   }                                                                                       \
   constexpr Enum&              operator&=(Enum& a, Enum b) noexcept { return a = a & b; } \
@@ -1569,7 +1569,7 @@ Overloads the bitwise operators for a given enum. `~`,`&`,`|`,`^`,`&=`,`|=`,`^=`
   constexpr Enum&              operator^=(Enum& a, Enum b) noexcept { return a = a ^ b; } \
   constexpr Enum operator~(Enum a) noexcept                                               \
   {                                                                                       \
-    return static_cast<Enum>(~static_cast<std::underlying_type_t<Enum>>(a));              \
+    return static_cast<Enum>(~static_cast<typename std::underlying_type<Enum>::type>(a));              \
   }
 ```
 

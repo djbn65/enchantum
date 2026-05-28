@@ -118,7 +118,7 @@ namespace scoped {
   template<typename String = string, ENCHANTUM_DETAILS_ENUM_BITFLAG_CONCEPT(E)>
   [[nodiscard]] constexpr String to_string_bitflag(const E value, const char sep = '|')
   {
-    using T = std::underlying_type_t<E>;
+    using T = typename std::underlying_type<E>::type;
     if constexpr (has_zero_flag<E>)
       if (static_cast<T>(value) == 0)
         return enchantum::scoped::to_string(value);
@@ -147,7 +147,7 @@ namespace scoped {
   template<ENCHANTUM_DETAILS_ENUM_BITFLAG_CONCEPT(E), typename BinaryPred>
   [[nodiscard]] constexpr optional<E> cast_bitflag(const string_view s, const char sep, const BinaryPred binary_pred) noexcept
   {
-    using T = std::underlying_type_t<E>;
+    using T = typename std::underlying_type<E>::type;
     T           check_value{};
     std::size_t pos = 0;
     for (std::size_t i = s.find(sep); i != s.npos; i = s.find(sep, pos)) {

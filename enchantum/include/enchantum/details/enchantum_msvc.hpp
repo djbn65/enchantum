@@ -105,13 +105,13 @@ namespace details {
   {
     // clang-format off
 #if ENCHANTUM_ENABLE_MSVC_SPEEDUP
-    constexpr auto skip_work_if_neg = IsBitFlag || std::is_unsigned_v<IntType> || sizeof(IntType) <= 2 ? 0 : 
+    constexpr auto skip_work_if_neg = IsBitFlag || std::is_unsigned<IntType>::value || sizeof(IntType) <= 2 ? 0 : 
 // MSVC 19.31 and below don't cast int/unsigned int into `unsigned long long` (std::uint64_t)
 // While higher versions do cast them
 #if _MSC_VER <= 1931
         sizeof(IntType) == 4
 #else
-        std::is_same_v<IntType,char32_t> 
+        std::is_same<IntType,char32_t>::value
 #endif
         ? sizeof(char32_t)*2-1 : sizeof(std::uint64_t)*2-1 - (sizeof(IntType)==8); // subtract 1 more from uint64_t since I am adding it in skip_if_cast_count
 #endif
@@ -168,8 +168,8 @@ namespace details {
     constexpr auto elements_local = []() {
       constexpr auto ArraySize = sizeof...(Is) + is_bitflag<E>;
       using MinT               = decltype(Min);
-      using Under              = std::underlying_type_t<E>;
-      using Underlying = std::make_unsigned_t<std::conditional_t<std::is_same_v<bool, Under>, unsigned char, Under>>;
+      using Under              = typename std::underlying_type<E>::type;
+      using Underlying = typename std::make_unsigned<typename std::conditional<std::is_same<bool, Under>::value, unsigned char, Under>::type>::type;
 
 
       constexpr auto str = [](const auto dependant) {
@@ -183,7 +183,7 @@ namespace details {
       constexpr auto type_name_len     = details::raw_type_name_func<E>().size() - 1;
       constexpr auto enum_in_array_len = details::enum_in_array_name_size<E{}>();
 
-      ReflectStringReturnValue<std::underlying_type_t<E>, ArraySize> ret;
+      ReflectStringReturnValue<typename std::underlying_type<E>::type, ArraySize> ret;
       details::parse_string<is_bitflag<E>>(
         /*str = */ str,
 #if _MSC_VER <= 1924
@@ -193,7 +193,7 @@ namespace details {
 #endif
         /*least_length_when_value=*/details::prefix_length_or_zero<E> +
           (enum_in_array_len != 0 ? enum_in_array_len + SZC("::") : 0),
-        /*min = */ static_cast<std::underlying_type_t<E>>(Min),
+        /*min = */ static_cast<typename std::underlying_type<E>::type>(Min),
         /*array_size = */ ArraySize,
         /*null_terminated= */ NullTerminated,
         /*enum_values= */ ret.values,
@@ -224,16 +224,16 @@ namespace details {
   {
     constexpr auto ArraySize = sizeof...(Is);
     using MinT               = decltype(Min);
-    using Under              = std::underlying_type_t<E>;
+    using Under              = typename std::underlying_type<E>::type;
 
 #if ENCHANTUM_ENABLE_MSVC_SPEEDUP
-    constexpr auto skip_work_if_neg = std::is_unsigned_v<Under> || sizeof(Under) <= 2 ? 0 :
+    constexpr auto skip_work_if_neg = std::is_unsigned<Under>::value || sizeof(Under) <= 2 ? 0 :
   // MSVC 19.31 and below don't cast int/unsigned int into `unsigned long long` (std::uint64_t)
   // While higher versions do cast them
   #if _MSC_VER <= 1931
       sizeof(Under) == 4
   #else
-      std::is_same_v<Under, char32_t>
+      std::is_same<Under, char32_t>::value
   #endif
       ? sizeof(char32_t) * 2 - 1
       : sizeof(std::uint64_t) * 2 - 1 -
@@ -252,7 +252,7 @@ namespace details {
 #else
       /*least_length_when_casting=*/SZC("(enum ") + type_name_len + SZC(")0x0") + (sizeof(E) == 8),
 #endif
-      /*min = */ static_cast<std::underlying_type_t<E>>(Min),
+      /*min = */ static_cast<typename std::underlying_type<E>::type>(Min),
       /*array_size = */ ArraySize);
   }
 

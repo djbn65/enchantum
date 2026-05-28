@@ -35,7 +35,7 @@ using ::std::to_underlying;
 template<ENCHANTUM_DETAILS_ENUM_CONCEPT(E)>
 [[nodiscard]] constexpr auto to_underlying(const E e) noexcept
 {
-  return static_cast<std::underlying_type_t<E>>(e);
+  return static_cast<typename std::underlying_type<E>::type>(e);
 }
 #endif
 
@@ -81,25 +81,25 @@ namespace details {
                                                              sizeof(E),
                                                              Min,
                                                              Max,
-                                                             std::is_signed_v<std::underlying_type_t<E>>)>{});
+                                                             std::is_signed<typename std::underlying_type<E>::type>::value)>{});
 
 
   template<typename E, auto Min, decltype(Min) Max>
   inline constexpr bool has_a_value_in = details::is_out_of_range<E, Min>(
     std::make_index_sequence<
-      details::get_index_sequence_max(false, has_fixed_underlying_type<E>, sizeof(E), Min, Max, std::is_signed_v<std::underlying_type_t<E>>)>{});
+      details::get_index_sequence_max(false, has_fixed_underlying_type<E>, sizeof(E), Min, Max, std::is_signed<typename std::underlying_type<E>::type>::value)>{});
 
 
   // Thanks https://en.cppreference.com/w/cpp/utility/intcmp.html
   template<typename T, typename U>
   constexpr bool cmp_less(const T t, const U u) noexcept
   {
-    if constexpr (std::is_signed_v<T> == std::is_signed_v<U>)
+    if constexpr (std::is_signed<T>::value == std::is_signed<U>::value)
       return t < u;
-    else if constexpr (std::is_signed_v<T>)
-      return t < 0 || std::make_unsigned_t<T>(t) < u;
+    else if constexpr (std::is_signed<T>::value)
+      return t < 0 || typename std::make_unsigned<T>::type(t) < u;
     else
-      return u >= 0 && t < std::make_unsigned_t<U>(u);
+      return u >= 0 && t < typename std::make_unsigned<U>::type(u);
   }
 
   template<typename U>
@@ -130,7 +130,7 @@ namespace details {
   constexpr auto get_reflection_data() noexcept
   {
     constexpr auto elements = reflection_data_impl<E, NullTerminated>.elements;
-    using StringLengthType = std::conditional_t<(elements.total_string_length < UINT8_MAX), std::uint8_t, std::uint16_t>;
+    using StringLengthType = typename std::conditional<(elements.total_string_length < UINT8_MAX), std::uint8_t, std::uint16_t>::type;
 #if ENCHANTUM_CHECK_OUT_OF_BOUNDS_BY >= 2
     if constexpr (
   #if defined(__clang_major__) && __clang_major__ >= 20
@@ -138,7 +138,7 @@ namespace details {
   #endif
       !details::has_specialized_traits<E> && 
       !is_bitflag<E> && 
-      !std::is_same_v<std::underlying_type_t<E>,bool>) {
+      !std::is_same<typename std::underlying_type<E>::type,bool>::value) {
   #define ENCHANTUM_ERROR_STRING                                                    \
     "enchantum has detected that this enum is not fully reflected. Please look at " \
     "https://github.com/ZXShady/enchantum/blob/main/docs/"                          \
@@ -147,13 +147,13 @@ namespace details {
     // TODO: switch to new check for those 2 compilers
   #if defined(__NVCOMPILER) || defined(__RESHARPER__)
       static_assert(elements.valid_count == reflection_data_impl<E, NullTerminated,
-        details::ClampToRange<std::underlying_type_t<E>>(enum_traits<E>::min * ENCHANTUM_CHECK_OUT_OF_BOUNDS_BY),
-        details::ClampToRange<std::underlying_type_t<E>>(enum_traits<E>::max * ENCHANTUM_CHECK_OUT_OF_BOUNDS_BY)
+        details::ClampToRange<typename std::underlying_type<E>::type>(enum_traits<E>::min * ENCHANTUM_CHECK_OUT_OF_BOUNDS_BY),
+        details::ClampToRange<typename std::underlying_type<E>::type>(enum_traits<E>::max * ENCHANTUM_CHECK_OUT_OF_BOUNDS_BY)
     >.elements.valid_count,
           ENCHANTUM_ERROR_STRING);
   #else
       // check [min,max] * 2 but exluding [min,max]
-      using T = std::underlying_type_t<E>;
+      using T = typename std::underlying_type<E>::type;
 
       constexpr auto max = +enum_traits<E>::max;
 
@@ -223,8 +223,8 @@ namespace details {
     const auto reflected = details::reflection_data<E, NullTerminated>;
     const auto strings   = details::reflection_data_string_storage<E, NullTerminated>.data();
 #else
-    constexpr auto reflected = details::reflection_data<std::remove_cv_t<E>, NullTerminated>;
-    constexpr auto strings   = details::reflection_data_string_storage<std::remove_cv_t<E>, NullTerminated>.data();
+    constexpr auto reflected = details::reflection_data<typename std::remove_cv<E>::type, NullTerminated>;
+    constexpr auto strings   = details::reflection_data_string_storage<typename std::remove_cv<E>::type, NullTerminated>.data();
 #endif
     constexpr auto size = sizeof(reflected.values) / sizeof(reflected.values[0]);
     static_assert(size != 0,
@@ -248,7 +248,7 @@ namespace details {
     for (std::size_t i = 0; i < size; ++i) {
       auto& [e, s]     = ret_data[i];
       e                = reflected.values[i];
-      using StringView = std::remove_cv_t<std::remove_reference_t<decltype(s)>>;
+      using StringView = typename std::remove_cv<typename std::remove_reference<decltype(s)>::type>::type;
       s                = StringView(strings + indices[i], indices[i + 1] - indices[i] - NullTerminated);
     }
     return ret;
@@ -261,7 +261,7 @@ template<Enum E, typename Pair = std::pair<E, enchantum::string_view>, bool Null
 template<typename E,
          typename Pair                            = std::pair<E, enchantum::string_view>,
          bool NullTerminated                      = true,
-         std::enable_if_t<std::is_enum_v<E>, int> = 0>
+         typename std::enable_if<std::is_enum<E>::value, int>::type = 0>
 #endif
 inline constexpr auto entries = enchantum::details::get_entries<E, Pair, NullTerminated>();
 
@@ -296,7 +296,7 @@ inline constexpr auto values = details::get_values<E>();
 #ifdef __cpp_concepts
 template<Enum E, typename String = string_view, bool NullTerminated = true>
 #else
-template<typename E, typename String = string_view, bool NullTerminated = true, std::enable_if_t<std::is_enum_v<E>, int> = 0>
+template<typename E, typename String = string_view, bool NullTerminated = true, typename std::enable_if<std::is_enum<E>::value, int>::type = 0>
 #endif
 inline constexpr auto names = details::get_names<E, String, NullTerminated>();
 
@@ -321,7 +321,7 @@ template<typename E>
 inline constexpr bool has_zero_flag = [](const auto is_bitflag) {
   if constexpr (is_bitflag.value) {
     for (const auto v : values<E>)
-      if (static_cast<std::underlying_type_t<E>>(v) == 0)
+      if (static_cast<typename std::underlying_type<E>::type>(v) == 0)
         return true;
   }
   return false;
@@ -340,7 +340,7 @@ template<typename E>
 inline constexpr bool is_contiguous_bitflag = [](const auto is_bitflag) {
   if constexpr (is_bitflag.value) {
     constexpr auto& enums = entries<E>;
-    using T               = std::underlying_type_t<E>;
+    using T               = typename std::underlying_type<E>::type;
     for (auto i = std::size_t{has_zero_flag<E>}; i < enums.size() - 1; ++i)
       if (T(enums[i].first) << 1 != T(enums[i + 1].first))
         return false;

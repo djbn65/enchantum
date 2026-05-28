@@ -25,7 +25,7 @@ namespace details {
   struct sized_iterator {
     static_assert(Size < INT16_MAX, "Too many enum entries");
   private:
-    using IndexType = std::conditional_t<(Size <= INT8_MAX), std::int8_t, std::int16_t>;
+    using IndexType = typename std::conditional<(Size <= INT8_MAX), std::int8_t, std::int16_t>::type;
   public:
     IndexType       index{};
     constexpr CRTP& operator+=(const std::ptrdiff_t offset) & noexcept
@@ -178,13 +178,13 @@ namespace details {
       using value_type = E;
       [[nodiscard]] constexpr E operator*() const noexcept
       {
-        using T = std::underlying_type_t<E>;
+        using T = typename std::underlying_type<E>::type;
 
         if constexpr (is_contiguous<E>) {
           return static_cast<E>(static_cast<T>(min<E>) + static_cast<T>(this->index));
         }
         else if constexpr (is_contiguous_bitflag<E>) {
-          using UT                       = std::make_unsigned_t<T>;
+          using UT                       = typename std::make_unsigned<T>::type;
           constexpr auto real_min_offset = details::countr_zero(static_cast<UT>(values<E>[has_zero_flag<E>]));
 
           if constexpr (has_zero_flag<E>)
@@ -246,10 +246,10 @@ template<Enum E, typename Pair = std::pair<E, string_view>, bool NullTerminated 
 inline constexpr details::entries_generator_t<E, Pair, NullTerminated> entries_generator{};
 
 #else
-template<typename E, typename StringView = string_view, bool NullTerminated = true, std::enable_if_t<std::is_enum_v<E>, int> = 0>
+template<typename E, typename StringView = string_view, bool NullTerminated = true, typename std::enable_if<std::is_enum<E>::value, int>::type = 0>
 inline constexpr details::names_generator_t<E, StringView, NullTerminated> names_generator{};
 
-template<typename E, typename Pair = std::pair<E, string_view>, bool NullTerminated = true, std::enable_if_t<std::is_enum_v<E>, int> = 0>
+template<typename E, typename Pair = std::pair<E, string_view>, bool NullTerminated = true, typename std::enable_if<std::is_enum<E>::value, int>::type = 0>
 inline constexpr details::entries_generator_t<E, Pair, NullTerminated> entries_generator{};
 
 #endif

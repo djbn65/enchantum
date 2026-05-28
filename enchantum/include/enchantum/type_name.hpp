@@ -35,8 +35,8 @@ namespace details {
                                      SZC(">(void) noexcept"));
 
     // clang-format off
-    constexpr auto prefix = std::is_enum_v<T> ? SZC("enum ") : 
-        std::is_class_v<T> ?  SZC("struct ") - (s[0] == 'c') :
+    constexpr auto prefix = std::is_enum<T>::value ? SZC("enum ") : 
+        std::is_class<T>::value ?  SZC("struct ") - (s[0] == 'c') :
         0;
 // clang-format on
 #elif defined(__GNUG__)
@@ -62,7 +62,7 @@ namespace details {
   template<typename T>
   constexpr auto type_name_func() noexcept
   {
-    static_assert(!std::is_function_v<std::remove_pointer_t<T>> && !std::is_member_function_pointer_v<T>,
+    static_assert(!std::is_function<typename std::remove_pointer<T>::type>::value && !std::is_member_function_pointer<T>::value,
                   "enchantum::type_name<T> does not work well with function pointers or functions or member function\n"
                   "pointers");
 

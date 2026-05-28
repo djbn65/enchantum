@@ -37,7 +37,7 @@ namespace details {
                            SZC("constexpr auto enchantum::details::enum_in_array_name_size() [with auto Enum = ]"));
     using E = decltype(Enum);
     // if scoped
-    if constexpr (!std::is_convertible_v<E, std::underlying_type_t<E>>) {
+    if constexpr (!std::is_convertible<E, typename std::underlying_type<E>::type>::value) {
       return s[0] == '(' ? s.size() - SZC("()0") : s.rfind(':') - 1;
     }
     else {
@@ -56,7 +56,7 @@ namespace details {
   constexpr auto gcc10_workaround() noexcept
   {
     using E               = decltype(V);
-    using T               = std::underlying_type_t<E>;
+    using T               = typename std::underlying_type<E>::type;
     constexpr auto prefix = SZC("constexpr auto enchantum::details::gcc10_workaround() [with auto V = ");
     constexpr auto begin  = __PRETTY_FUNCTION__ + prefix;
     if constexpr (begin[0] == '(') {
@@ -93,7 +93,7 @@ namespace details {
     }
     else {
 #if __GNUC__ == 10
-      return details::gcc10_workaround<static_cast<Enum>((std::numeric_limits<std::underlying_type_t<Enum>>::min)())>();
+      return details::gcc10_workaround<static_cast<Enum>((std::numeric_limits<typename std::underlying_type<Enum>::type>::min)())>();
 #else
       constexpr auto  s      = details::enum_in_array_name_size<Enum{}>();
       constexpr auto& tyname = raw_type_name<Enum>;
@@ -170,8 +170,8 @@ namespace details {
 
     constexpr auto elements_local = []() {
       constexpr auto ArraySize = sizeof...(Is) + is_bitflag<E>;
-      using Under              = std::underlying_type_t<E>;
-      using Underlying = std::make_unsigned_t<std::conditional_t<std::is_same_v<bool, Under>, unsigned char, Under>>;
+      using Under              = typename std::underlying_type<E>::type;
+      using Underlying = typename std::make_unsigned<typename std::conditional<std::is_same<bool, Under>::value, unsigned char, Under>::type>::type;
 
 
       constexpr auto str = [](const auto dependant) {
@@ -193,13 +193,13 @@ namespace details {
       constexpr auto enum_in_array_len = details::enum_in_array_name_size<E{}>();
       constexpr auto length_of_enum_in_template_array_casting = details::length_of_enum_in_template_array_if_casting<E>();
 
-      ReflectStringReturnValue<std::underlying_type_t<E>, ArraySize> ret;
+      ReflectStringReturnValue<typename std::underlying_type<E>::type, ArraySize> ret;
       details::parse_string<is_bitflag<E>>(
         /*str = */ str,
         /*least_length_when_casting=*/SZC("(") + length_of_enum_in_template_array_casting + SZC(")0"),
         /*least_length_when_value=*/details::prefix_length_or_zero<E> +
           (enum_in_array_len != 0 ? enum_in_array_len + SZC("::") : 0),
-        /*min = */ static_cast<std::underlying_type_t<E>>(Min),
+        /*min = */ static_cast<typename std::underlying_type<E>::type>(Min),
         /*array_size = */ ArraySize,
         /*null_terminated= */ NullTerminated,
         /*enum_values= */ ret.values,
@@ -226,7 +226,7 @@ namespace details {
   constexpr bool is_out_of_range(std::index_sequence<Is...>) noexcept
   {
     constexpr auto ArraySize = sizeof...(Is);
-    using Under              = std::underlying_type_t<E>;
+    using Under              = typename std::underlying_type<E>::type;
 
 #if __GNUC__ <= 10
     // GCC 10 does not have it

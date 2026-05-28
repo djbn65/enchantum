@@ -454,7 +454,7 @@ TEMPLATE_LIST_TEST_CASE("array size checks", "[constants]", AllEnumsTestTypes)
 
       CHECK(typeid(x[0]) == typeid(x[1]));
 
-      STATIC_CHECK(std::is_same_v<std::decay_t<decltype(x[0])>, std::decay_t<decltype(y[0])>>);
+      STATIC_CHECK(std::is_same<typename std::decay<decltype(x[0])>::type, typename std::decay<decltype(y[0])>::type>::value);
 
 
       REQUIRE(x.size() == y.size());
@@ -475,7 +475,7 @@ TEMPLATE_LIST_TEST_CASE("array size checks", "[constants]", AllEnumsTestTypes)
 
       REQUIRE(x.size() == y.size());
 
-      STATIC_CHECK(std::is_same_v<std::decay_t<decltype(x[0])>, std::decay_t<decltype(y[0])>>);
+      STATIC_CHECK(std::is_same<typename std::decay<decltype(x[0])>::type, typename std::decay<decltype(y[0])>::type>::value);
 
       for (std::size_t i = 0; i < x.size(); ++i)
         CHECK(x[i] == y[i]);
@@ -512,14 +512,14 @@ TEST_CASE("Color enum min/max", "[range][min_max]")
   STATIC_CHECK(enchantum::min<Color> == Color::Aqua);
   STATIC_CHECK(enchantum::max<Color> == Color::Blue);
 
-  STATIC_CHECK(static_cast<std::underlying_type_t<Color>>(enchantum::min<Color>) == -42);
-  STATIC_CHECK(static_cast<std::underlying_type_t<Color>>(enchantum::max<Color>) == 214);
+  STATIC_CHECK(static_cast<typename std::underlying_type<Color>::type>(enchantum::min<Color>) == -42);
+  STATIC_CHECK(static_cast<typename std::underlying_type<Color>::type>(enchantum::max<Color>) == 214);
 }
 
 TEST_CASE("Color enum cast from underlying type", "[cast]")
 {
   using enchantum::cast;
-  using T = std::underlying_type_t<Color>;
+  using T = typename std::underlying_type<Color>::type;
   STATIC_CHECK(enchantum::cast<Color>(T(Color::Green)) == Color::Green);
   STATIC_CHECK(enchantum::cast<Color>(T(Color::Red)) == Color::Red);
   STATIC_CHECK(enchantum::cast<Color>(T(Color::Blue)) == Color::Blue);
